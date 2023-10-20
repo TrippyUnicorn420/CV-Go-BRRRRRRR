@@ -18,6 +18,4 @@ For YOLO, put a YOLOv8-formatted dataset into a directory called "yolo_fishies",
 
 ## Benchmarking
 
-Run worker.py. do_the_thing() performs inference on either a Faster R-CNN or a RetinaNet model. look_once() performs inference on a YOLOv8 model.
-
-
+Run worker.py. `do_the_thing()` performs inference on either a Faster R-CNN or a RetinaNet model. `look_once()` performs inference on a YOLOv8 model. They each take the path to their respective model weights as arguments.
