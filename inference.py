@@ -9,6 +9,7 @@ import tqdm
 import cv2
 
 from detectron2 import model_zoo
+import csv
 from detectron2.engine import DefaultPredictor
 from detectron2.config import get_cfg
 from detectron2.utils.video_visualizer import VideoVisualizer
@@ -33,6 +34,7 @@ def do_the_thing(model_path):
     )
 
     cfg = get_cfg()
+    cfg.MODEL.DEVICE = "cuda"
     cfg.MODEL.WEIGHTS = model_path
     cfg.DATASETS.TRAIN = ("fishies_train",)
     predictor = DefaultPredictor(cfg)
@@ -52,18 +54,18 @@ def do_the_thing(model_path):
             # Get prediction results for this frame
             outputs = predictor(frame)
 
-            # Make sure the frame is colored
-            frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
-
-            # Draw a visualization of the predictions using the video visualizer
-            visualization = v.draw_instance_predictions(
-                frame, outputs["instances"].to("cpu")
-            )
-
-            # Convert Matplotlib RGB format to OpenCV BGR format
-            visualization = cv2.cvtColor(visualization.get_image(), cv2.COLOR_RGB2BGR)
-
-            yield visualization
+            # # Make sure the frame is colored
+            # frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
+            #
+            # # Draw a visualization of the predictions using the video visualizer
+            # visualization = v.draw_instance_predictions(
+            #     frame, outputs["instances"].to("cpu")
+            # )
+            #
+            # # Convert Matplotlib RGB format to OpenCV BGR format
+            # visualization = cv2.cvtColor(visualization.get_image(), cv2.COLOR_RGB2BGR)
+            #
+            # yield visualization
 
             readFrames += 1
             if readFrames > maxFrames:
@@ -71,20 +73,16 @@ def do_the_thing(model_path):
 
     start = time.time()
     # Enumerate the frames of the video
-    for visualization in tqdm.tqdm(runOnVideo(video, num_frames), total=num_frames):
-        cv2.imwrite("POSE detectron2.png", visualization)
-        video_writer.write(visualization)
+    # for visualization in tqdm.tqdm(runOnVideo(video, num_frames), total=num_frames):
+    #     cv2.imwrite("POSE detectron2.png", visualization)
+    #     video_writer.write(visualization)
+    tqdm.tqdm(runOnVideo(video, num_frames), total=num_frames)
     end = time.time()
     time_taken = end - start
 
-    print(
-        f"""
-    ***STATISTICS FOR {model_path}***
-    
-    Time taken: {time_taken}
-    Average FPS: {num_frames / time_taken}
-    """
-    )
+    with open("results_rtx3060.csv", "a") as csvfile:
+        writer = csv.writer(csvfile)
+        writer.writerow([model_path, time_taken, (num_frames / time_taken)])
 
     video.release()
     video_writer.release()
@@ -95,17 +93,12 @@ def look_once(model_path):
     video = cv2.VideoCapture("../test_vid.mp4")
     num_frames = int(video.get(cv2.CAP_PROP_FRAME_COUNT))
 
-    start = time.time()
     model = YOLO(model_path)
+    start = time.time()
     model("../test_vid.mp4")
     end = time.time()
     time_taken = end - start
 
-    print(
-        f"""
-        ***STATISTICS FOR {model_path}***
-    
-        Time taken: {time_taken}
-        Average FPS: {num_frames / time_taken}
-        """
-    )
+    with open("results_rtx3060.csv", "a") as csvfile:
+        writer = csv.writer(csvfile)
+        writer.writerow([model_path, time_taken, (num_frames / time_taken)])

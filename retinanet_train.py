@@ -4,6 +4,7 @@ but it works well enough.
 """
 
 import detectron2
+from detectron2.evaluation import COCOEvaluator, inference_on_dataset
 from detectron2.utils.logger import setup_logger
 
 setup_logger()
@@ -17,7 +18,7 @@ from detectron2 import model_zoo
 from detectron2.engine import DefaultPredictor
 from detectron2.config import get_cfg
 from detectron2.utils.visualizer import Visualizer
-from detectron2.data import MetadataCatalog
+from detectron2.data import MetadataCatalog, build_detection_test_loader
 from detectron2.data.catalog import DatasetCatalog
 
 from detectron2.data.datasets import register_coco_instances
@@ -57,32 +58,31 @@ def main():
 
     cfg = get_cfg()
     cfg.merge_from_file(
-        model_zoo.get_config_file("COCO-Detection/faster_rcnn_R_50_FPN_3x.yaml")
+        model_zoo.get_config_file("COCO-Detection/retinanet_R_50_FPN_3x.yaml")
     )
     cfg.DATASETS.TRAIN = ("fishies_train",)
     cfg.DATASETS.TEST = ("fishies_test",)
     cfg.DATALOADER.NUM_WORKERS = 2
     cfg.MODEL.WEIGHTS = model_zoo.get_checkpoint_url(
-        "COCO-Detection/faster_rcnn_R_50_FPN_3x.yaml"
+        "COCO-Detection/retinanet_R_50_FPN_3x.yaml"
     )
-
     cfg.SOLVER.IMS_PER_BATCH = 8
-    cfg.SOLVER.BASE_LR = 0.02
-    cfg.SOLVER.MAX_ITER = 200
+    cfg.SOLVER.BASE_LR = 0.01
+    cfg.SOLVER.MAX_ITER = 5000
     cfg.SOLVER.STEPS = []
     cfg.MODEL.ROI_HEADS.BATCH_SIZE_PER_IMAGE = 512
+    cfg.MODEL.RETINANET.NUM_CLASSES = 1
 
-    with open("./d2_model_configs/faster_rcnn_deep_640px.yaml", "w") as f:
+    with open("./d2_model_configs/retinanet_deep_640px.yaml", "w") as f:
         f.write(cfg.dump())
 
     os.makedirs(cfg.OUTPUT_DIR, exist_ok=True)
     trainer = DefaultTrainer(cfg)
     trainer.resume_or_load(resume=False)
     trainer.train()
-    
-    with open("./d2_model_configs/faster_rcnn_deep_640px.yaml", "w") as f:
-        f.write(cfg.dump())
 
+    with open("./d2_model_configs/retinanet_deep_640px.yaml", "w") as f:
+        f.write(cfg.dump())
 
 
 if __name__ == "__main__":
